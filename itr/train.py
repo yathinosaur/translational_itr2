@@ -47,8 +47,8 @@ def main():
     model, tokenizers, train_loader, eval_loader = gen_model_loaders(rconf)
     writer = SummaryWriter(rconf.log_dir)
     #train_losses, val_losses, val_accs = run_train(rconf, model, train_loader, eval_loader, writer)
-    logger = pl.loggers.tensorboard.TensorBoardLogger("tb_logs", name="Translational_Model")
-    trainer = pl.Trainer(max_epochs=rconf.epochs, logger=logger)
+    #logger = pl.loggers.tensorboard.TensorBoardLogger("tb_logs", name="Translational_Model")
+    trainer = pl.Trainer(max_epochs=rconf.epochs)
     trainer.fit(model)
 
     model.save(tokenizers, rconf.model_output_dirs)

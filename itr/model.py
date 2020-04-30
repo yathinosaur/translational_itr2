@@ -5,19 +5,22 @@ from easydict import EasyDict as ED
 
 import pytorch_lightning as pl
 
+import os.path
+
 #class TranslationModel(torch.nn.Module):
 class TranslationModel(pl.LightningModule):
     #def __init__(self, encoder, decoder):
     def __init__(self, encoder, decoder, train_loader, eval_loader, config):
 
         super().__init__() 
+        
+        self.config = config
 
         #Creating encoder and decoder with their respective embeddings.
         self.encoder = encoder
         self.decoder = decoder
         self.tran_loader = train_loader
         self.eval_loader = eval_loader
-        self.config = config
         self.device = torch.device("cpu")
 
     def forward(self, encoder_input_ids, decoder_input_ids):
@@ -75,6 +78,8 @@ def get_tokenizer():
 
 def build_model(config, train_loader, eval_loader):
     
+    
+
     src_tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased')
     tgt_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
@@ -119,7 +124,22 @@ def build_model(config, train_loader, eval_loader):
     
     decoder = BertForMaskedLM(decoder_config)
     decoder.set_input_embeddings(decoder_embeddings.cpu())
-    
+
+    input_dirs = config.model_output_dirs
+
+    if(os.listdir(input_dirs['decoder']) and os.listdir(input_dirs['encoder'])):
+        suffix = "pytorch_model.bin"
+        decoderPath = os.path.join(input_dirs['decoder'], suffix)
+        encoderPath = os.path.join(input_dirs['encoder'], suffix)
+        
+        decoder_state_dict = torch.load(decoderPath)
+        encoder_state_dict = torch.load(encoderPath)
+        decoder.load_state_dict(decoder_state_dict)
+        encoder.load_state_dict(encoder_state_dict)
+        model = TranslationModel(encoder, decoder, train_loader, eval_loader, config)
+        model.cpu()
+        return model
+
     #model = TranslationModel(encoder, decoder)
     model = TranslationModel(encoder, decoder, train_loader, eval_loader, config)
     model.cpu()
