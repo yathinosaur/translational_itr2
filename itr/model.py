@@ -19,7 +19,7 @@ class TranslationModel(pl.LightningModule):
         #Creating encoder and decoder with their respective embeddings.
         self.encoder = encoder
         self.decoder = decoder
-        self.tran_loader = train_loader
+        self.train_loader = train_loader
         self.eval_loader = eval_loader
         self.device = torch.device("cpu")
 
@@ -51,7 +51,7 @@ class TranslationModel(pl.LightningModule):
         return {'val_loss': loss}
 
     def train_dataloader(self):
-        return self.tran_loader
+        return self.train_loader
         
     def val_dataloader(self):
         return self.eval_loader
