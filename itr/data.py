@@ -49,7 +49,7 @@ class IndicDataset(Dataset):
                  filepath,
                  is_train=True):
         filepath += 'train' if is_train else 'valid'
-        self.df = pd.read_csv(filepath, header=None, sep='\t')
+        self.df = pd.read_csv(filepath, header=None, sep=',')
 
         self.src_tokenizer = src_tokenizer
         self.tgt_tokenizer = tgt_tokenizer

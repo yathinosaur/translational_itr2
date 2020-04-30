@@ -43,6 +43,7 @@ from train_util import run_train
 from config import replace, preEnc, preEncDec
 
 def main():
+    preproc_data()
     rconf = preEncDec
     model, tokenizers, train_loader, eval_loader = gen_model_loaders(rconf)
     writer = SummaryWriter(rconf.log_dir)
