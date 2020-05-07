@@ -10,7 +10,7 @@ import os.path
 #class TranslationModel(torch.nn.Module):
 class TranslationModel(pl.LightningModule):
     #def __init__(self, encoder, decoder):
-    def __init__(self, encoder, decoder, train_loader, eval_loader, config):
+    def __init__(self, encoder, decoder, train_loader, eval_loader, tokenizer, config):
 
         super().__init__() 
         
@@ -21,15 +21,24 @@ class TranslationModel(pl.LightningModule):
         self.decoder = decoder
         self.train_loader = train_loader
         self.eval_loader = eval_loader
+        self.tokenizer = tokenizer
         self.device = torch.device("cpu")
 
-    def forward(self, encoder_input_ids, decoder_input_ids):
-
+    def forward(self, encoder_input_ids, decoder_input_ids=None, isEval=False):
         encoder_hidden_states = self.encoder(encoder_input_ids)[0]
-        loss, logits = self.decoder(decoder_input_ids,
+        masked_decoder_input_ids = torch.full(decoder_input_ids.size(), self.tokenizer.mask_token_id, dtype=torch.long)
+        if(isEval):
+            logits = self.decoder(masked_decoder_input_ids,
+                                    encoder_hidden_states=encoder_hidden_states)
+        
+            return logits
+
+        #masked_decoder_input_ids = torch.full_like(decoder_input_ids, 100)
+        #encoder_input_ids, decoder_input_ids = self.equalize(encoder_input_ids, decoder_input_ids)
+        loss, logits = self.decoder(masked_decoder_input_ids,
                                     encoder_hidden_states=encoder_hidden_states, 
                                     masked_lm_labels=decoder_input_ids)
-
+        
         return loss, logits
 
     def save(self, tokenizers, output_dirs):
@@ -78,8 +87,6 @@ def get_tokenizer():
 
 def build_model(config, train_loader, eval_loader):
     
-    
-
     src_tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased')
     tgt_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
@@ -124,9 +131,8 @@ def build_model(config, train_loader, eval_loader):
     
     decoder = BertForMaskedLM(decoder_config)
     decoder.set_input_embeddings(decoder_embeddings.cpu())
-
+    """
     input_dirs = config.model_output_dirs
-
     if(os.listdir(input_dirs['decoder']) and os.listdir(input_dirs['encoder'])):
         suffix = "pytorch_model.bin"
         decoderPath = os.path.join(input_dirs['decoder'], suffix)
@@ -136,12 +142,12 @@ def build_model(config, train_loader, eval_loader):
         encoder_state_dict = torch.load(encoderPath)
         decoder.load_state_dict(decoder_state_dict)
         encoder.load_state_dict(encoder_state_dict)
-        model = TranslationModel(encoder, decoder, train_loader, eval_loader, config)
+        model = TranslationModel(encoder, decoder, train_loader, eval_loader, tgt_tokenizer, config)
         model.cpu()
         return model
-
+    """
     #model = TranslationModel(encoder, decoder)
-    model = TranslationModel(encoder, decoder, train_loader, eval_loader, config)
+    model = TranslationModel(encoder, decoder, train_loader, eval_loader, tgt_tokenizer, config)
     model.cpu()
 
 
